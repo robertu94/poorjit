@@ -1,0 +1,9 @@
+includedir=@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@/poorjit
+libdir=@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@
+
+Name: poorjit
+Description: poorjit
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir} -I@Boost_INCLUDE_DIRS@
+Libs: -L${libdir} -lpoorjit -l@CMAKE_DL_LIBS@ -L@Boost_LIBRARY_DIRS@ -lboost_filesystem -lboost_atomic
+Requires: zlib

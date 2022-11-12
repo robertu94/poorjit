@@ -1,0 +1,7 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/poorjitTargets.cmake")
+
+find_package(Boost COMPONENTS filesystem)
+find_package(ZLIB)
+check_required_components(poorjit)
