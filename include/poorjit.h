@@ -6,6 +6,7 @@
 #include <future>
 #include <mutex>
 #include <string>
+#include <map>
 #include <zlib.h>
 
 namespace poorjit {
@@ -16,16 +17,23 @@ namespace fs = ::std::filesystem;
 
 template <class plugin_api> class jitlib {
 public:
+  jitlib() : symbol() {}
   jitlib(boost::shared_ptr<plugin_api> &&sym) : symbol(sym) {}
   plugin_api *operator->() { return symbol.get(); }
   plugin_api &operator*() { return *symbol; }
+  plugin_api *operator->() const { return symbol.get(); }
+  plugin_api &operator*() const { return *symbol; }
+
+  operator bool() const {
+      return (bool)symbol;
+  }
 
 private:
   boost::shared_ptr<plugin_api> symbol;
 };
 
-std::mutex jitmtx; // protects file_mtx
-std::map<std::string, std::mutex> file_mtx; //ensures each file is only compiled once
+std::mutex& jitmtx(); // protects file_mtx
+std::map<std::string, std::mutex>& file_mtx(); //ensures each file is only compiled once
 
 template <class plugin_api> class jitmgr {
 
@@ -36,8 +44,8 @@ public:
     }
   }
   std::future<jitlib<plugin_api>> jit(std::string source_code, std::vector<std::string>extra_args={}) {
-    std::unique_lock<std::mutex> lock(jitmtx);
-    fs::create_directory(jit_workdir);
+    std::unique_lock<std::mutex> lock(jitmtx());
+    fs::create_directories(jit_workdir);
     auto jit_path = (jit_workdir / hash(source_code));
 
     return std::async(
@@ -49,8 +57,8 @@ public:
           auto lib_path = my_jit_path;
           lib_path.replace_extension(".so");
 
-          std::unique_lock<std::mutex> jit_lock(jitmtx);
-          std::unique_lock<std::mutex> file_lock(file_mtx[lib_path]);
+          std::unique_lock<std::mutex> jit_lock{jitmtx()};
+          std::unique_lock<std::mutex> file_lock{file_mtx()[lib_path]};
 
           //cache compilation
           if(!fs::exists(lib_path)) {
@@ -80,9 +88,6 @@ public:
               lib_path.string(), "plugin", dll::load_mode::append_decorations)};
         });
   }
-  void disable_cleanup() {
-    do_cleanup = false;
-  }
 
 private:
   std::string hash(std::string const &data) {
@@ -92,7 +97,6 @@ private:
     return std::to_string(crc);
   }
 
-  bool do_cleanup = true;
   std::vector<fs::path> cleanup;
   fs::path jit_workdir =
       fs::temp_directory_path() / "poorjit" / std::to_string(getpid());
