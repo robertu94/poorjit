@@ -1,6 +1,6 @@
 ## template for a CMake C++ Library
 cmake_minimum_required(VERSION 3.14)
-project(poorjit VERSION "0.0.2" LANGUAGES CXX)
+project(poorjit VERSION "0.0.3" LANGUAGES CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -49,6 +49,7 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(POORJIT_DEFAULT_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "path to default c++ compiler used by POORJIT" )
 option(BUILD_SHARED_LIBS "build poorjit as a shared library" ON)
 
 find_package(ZLIB REQUIRED)
